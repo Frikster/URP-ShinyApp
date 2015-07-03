@@ -1,0 +1,414 @@
+# server.R
+# Use for debugging: runApp("YourAppName(Filename)", display.mode = "showcase")
+rm(list=ls())
+library(shiny)
+library(party)
+
+shinyServer(function(input, output, clientData, session) {
+  
+  dataset<-reactive({
+    input$file
+    if(is.null(input$file)){
+      (data.frame())
+    }
+    else{
+      filename<-input$file
+      load(filename$datapath)
+      dat
+    }
+  })
+  
+  observe({ 
+    updateSelectInput(session,"an", 
+                      "Anchor:", 
+                      c(unique(as.character(names(dataset())))))
+  })  
+  
+  
+  observe({
+    input$go
+    # Set the label, choices, and selected item based on written input
+    if(input$control_preds!=""){
+      toBeChecked<-names(dataset())[grepl(paste(strsplit(input$control_preds,",")[[1]],collapse="|"),names(dataset()))]
+    }
+    else
+    {
+      toBeChecked<-names(dataset())
+    }
+    
+    
+    
+    
+    ####
+    #subset multiple selections (comma separated)
+    #controlPredsList<-unlist(strsplit(input$control_preds,",")) 
+    # TODO
+    
+    # Set the label, choices, and selected item based on written input
+    #toBeChecked<-names(dataset())[grepl(paste(input$control_preds),names(dataset()))]
+    updateCheckboxGroupInput(session, "preds",
+                             'Choose Predictors',
+                             choices = names(dataset()),
+                             selected = toBeChecked[toBeChecked!=input$an])    
+    updateCheckboxGroupInput(session, "tableviewPreds",
+                             'Choose Predictors',
+                             choices = names(dataset()),
+                             selected = names(dataset())[grepl(paste(strsplit(input$control_tableviewPreds,",")[[1]],collapse="|"),names(dataset()))])      
+    if(exists("datSubset")&&!is.null(datSubset$node)){
+      updateRadioButtons(session,"nodesRadio",
+                         h3("Choose Node to Display"),
+                         choices = sort(unique(datSubset$node)),
+                         selected = NULL,
+                         inline = TRUE)
+    }
+  })
+  
+  # Construct URP-Ctree
+  output$plot <- renderPlot({  
+    if(input$go==0){
+      return()
+    }
+    else {
+      isolate({
+        datSubset<<-subset(dataset(),dataset()[,input$an]!="NA")  
+        anchor <- datSubset[,input$an]
+        predictors <- datSubset[,input$preds]
+        urp<<-ctree(anchor~., data=data.frame(anchor,predictors))
+        node<-where(urp)
+        datSubset<<-cbind(anchor,node,datSubset)
+        colnames(datSubset)[1]<<-input$an
+        plot(urp,main=input$title_urp)
+        
+        # Get statistics for each node (i.e. median values)
+        medianList <- by(anchor,where(urp),median) #or whatever function you desire for median
+        treeGridList<-numeric(dim(datSubset)[1]) 
+        # Create a list of all grid elements from the tree
+        for(gg in grid.ls(print=F)[[1]]) {
+          if (grepl("text", gg)) {
+            treeGridList[gg]<-(paste(gg, grid.get(gg)$label,sep=": "))
+          }
+        }
+        treeGridList<-subset(treeGridList,treeGridList!=0)
+        
+        
+        # Change the label "node" to "cohort" and specifiy median for each
+        treeGridList_Nodes<-subset(treeGridList,grepl("Node",treeGridList))
+        for(i in 1:length(treeGridList_Nodes)){
+          gridNode_Ref<-sub("(.*?):.*", "\\1", treeGridList_Nodes)[i]
+          nodeNum<-sub(".*:", "", treeGridList_Nodes)[i]
+          nodeNum<-substring(nodeNum[[1]],7)
+          grid.edit(gridNode_Ref, label=paste("Median",medianList[[i]],"Cohort",nodeNum))
+          #grid.edit(gridNode_Ref, gp=gpar(fontsize=15))
+        }
+        # increase size of title
+        gridTitle_Ref<-sub("(.*?):.*", "\\1", treeGridList)[1]
+        grid.edit(gridTitle_Ref, gp=gpar(fontsize=20))
+        
+        # Incrase the size of the yaxis label
+        treeGridList_yaxis<-numeric(dim(datSubset)[1])
+        for(gg in grid.ls(print=F)[[1]]) {
+          if (grepl("yaxis", gg)) {
+            treeGridList_yaxis[gg]<-(paste(gg, grid.get(gg)$label,sep=": "))
+          }
+        }
+        treeGridList_yaxis<-subset(treeGridList_yaxis,treeGridList_yaxis!=0)
+        for(i in 1:length(treeGridList_yaxis)){
+          gridAxis_Ref<-sub("(.*?):.*", "\\1", treeGridList_yaxis)[i]
+          grid.edit(gridAxis_Ref, gp=gpar(fontsize=18))
+        }
+      })
+    }
+  },height = 1000, width = 1000)
+  
+  output$nodePlot <- renderPlot({ 
+    input$nodesRadio
+    if(exists("datSubset")&&!is.null(datSubset$node)){   
+      if(!is.numeric(datSubset[datSubset$node==input$nodesRadio,][,colnames(datSubset)[1]]))
+      {
+        barplot(table(datSubset[datSubset$node==input$nodesRadio,][,colnames(datSubset)[1]]),cex.main=1.4,cex.axis=1.6)
+      }
+      else{
+        n<-length(datSubset[datSubset$node==input$nodesRadio,][,colnames(datSubset)[1]])
+        median<-boxplot(datSubset[datSubset$node==input$nodesRadio,][,colnames(datSubset)[1]])$stats[3,1]
+        boxplot(datSubset[datSubset$node==input$nodesRadio,][,colnames(datSubset)[1]],main=paste("median = ",median," n = ",n),cex.main=1.4,cex.axis=1.6)
+      }
+    }
+  })
+  
+  # Filter data based on selections
+  output$table <- renderDataTable({
+    if(input$tableButton<=0){
+      return()
+    }
+    else{ 
+      
+      datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
+    }
+  })
+  
+  
+ # toBeChecked<-names(dataset())[grepl(paste(strsplit(input$control_preds,",")[[1]],collapse="|"),names(dataset()))]
+  
+  
+  output$AISTable<-renderTable({
+    if(input$tableButton<=0){
+      return()
+    }
+    else{
+    table(datSubset[c("AIS.6Months","node")])
+    }
+  })
+  
+  # Creates recovery curves, showing how anchor outcome distributions change from 2 weeks to 12 months for cohort input$nodesRadio
+  output$recovCurve_plot<-renderPlot({
+    input$nodesRadio
+    if(exists("datSubset")&&!is.null(datSubset$node)){
+      allTimes<-list()
+      for(i in c("2Weeks","1Month","3Months","6Months","12Months"))
+      {
+        if(i=="2Weeks"){i_str<-"2 weeks"}
+        if(i=="1Month"){i_str<-"1 month"}
+        if(i=="3Months"){i_str<-"3 months"}
+        if(i=="6Months"){i_str<-"6 months"}
+        if(i=="12Months"){i_str<-"12 months"}
+        #input$nodesRadio<-1
+        anchorType<-strsplit(names(datSubset)[1],"\\.")[[1]][1]
+        distribution_str<-paste(anchorType,".",i,sep="")
+        allGroups<-list()
+        #correctFlags<-list()
+        #while(input$nodesRadio<=max(datSubset$node,na.rm=TRUE)){
+        group<-subset(datSubset,node==input$nodesRadio)
+        if(length(group$node)>0){
+          #correctFlags<-append(correctFlags,input$nodesRadio)
+          distribution<-subset(group,select=distribution_str)
+          allGroups<-append(allGroups,distribution)
+          names(allGroups)[length(allGroups)]<-paste("Cohort",input$nodesRadio,"at",i_str)
+        }
+        #  input$nodesRadio<-input$nodesRadio+1                                                   
+        #}
+        allTimes<-append(allTimes,allGroups)    
+      }
+      
+      quagmire<-sapply(allTimes,'[',seq(max(sapply(allTimes,length))))
+      quagmire<-apply(quagmire,2,as.numeric)
+      
+      #correctFlags<-as.numeric(correctFlags)
+      
+      #for(input$nodesRadio in correctFlags){
+      distributions<-subset(quagmire,select=grepl(paste("Cohort",input$nodesRadio),colnames(quagmire)))
+      
+      for(i in 1:5){
+        if(i==1){i_str<-"2 weeks"}
+        if(i==2){i_str<-"1 month"}
+        if(i==3){i_str<-"3 months"}
+        if(i==4){i_str<-"6 months"}
+        if(i==5){i_str<-"12 months"}
+        
+        currentTime<-distributions[,i]
+        n<-length(currentTime[!is.na(currentTime)])
+        
+        colnames(distributions)[i]<-paste(i_str,"n =",n)
+      }    
+      rangeFinder<-subset(datSubset,select=grepl(paste(anchorType,".",sep=""),colnames(datSubset),fixed=TRUE))
+      rangeFinder<-sapply(rangeFinder,as.numeric)
+      rangeFix<-max(cbind(rangeFinder,datSubset$anchor[,1]),na.rm=TRUE)  
+      boxplot(distributions,cex.main=1.4,ylim=c(0,rangeFix),cex.axis=1.6)
+    }
+  })
+  
+  
+  #REQUIRES CONTINUOUS DATA
+  #Output power plots for each cohort that show what sample size is needed for partcular powers where the 
+  #treatment effect is defined by user. i.e. pts is the by how many points each patient recovers
+  output$powerCalcPts<-renderPlot({
+    baseline<-input$bl
+    flag<-input$nodesRadio
+    
+    if(exists("datSubset")&&!is.null(datSubset$node)&&(baseline!="")&&exists("flag")&&exists("baseline")){
+    #powerCalcPts(flag,baseline,pts){
+    anchorType<-strsplit(names(datSubset)[1],"\\.")[[1]][1]
+    title_anchor<-names(datSubset[1])
+    #flag<-1
+    #while(flag<=max(datSubset$node,na.rm=TRUE)){
+    group<-subset(datSubset,node==flag)
+    
+    # If the current value of flag is a valid node
+    if(length(group$node)>0){
+      distribution2<-subset(group,select=title_anchor)
+      distribution1<-subset(group,select=paste(anchorType,".",baseline,sep=""))
+      
+      changeDistControl<-distribution2[[1]]-distribution1[[1]]
+      changeDistControl<-subset(changeDistControl,changeDistControl!="NA")
+      avgChangeControl<-mean(changeDistControl)
+      
+      #     upperHinge<-boxplot(distribution2[[1]])$stats[4,1]
+      #     lowerHinge<-boxplot(distribution2[[1]])$stats[4,1]
+      #     if(anchorType=="at10m"){
+      #       hinge<-lowerHinge
+      #     } else{
+      #       hinge<-upperHinge
+      #     }
+      
+      rangeFinder<-subset(datSubset,select=grepl(paste(anchorType,".",sep=""),colnames(datSubset),fixed=TRUE))
+      rangeFinder<-sapply(rangeFinder,as.numeric)
+      # FIX THIS LINE (datSubset$anchor undefined):
+      rangeFix<<-max(cbind(rangeFinder,datSubset$anchor[,1]),na.rm=TRUE)  
+      # boxplot(distributions,cex.main=1.4,ylim=c(0,rangeFix),cex.axis=1.6)
+      
+      # range of treatment effect
+      ptsRange <- c(2:rangeFix)
+      
+      sampleNeededY<-numeric(rangeFix)
+      populationSampleNeededY<-numeric(rangeFix)
+      effectSizeY<-numeric(rangeFix)
+      
+      
+      for(pts in ptsRange){
+      distribution_ptsInc<-distribution2[[1]]+pts
+      distribution_ptsInc[distribution_ptsInc>rangeFix]<-rangeFix
+        
+      changeDistExp<-distribution_ptsInc-distribution1[[1]]
+      changeDistExp<-subset(changeDistExp,changeDistExp!="NA")
+      avgChangeExp<-mean(changeDistExp)
+      
+      changeInChange<-avgChangeExp-avgChangeControl 
+      
+      varControl<-sd(changeDistControl)^2
+      varExp<-sd(changeDistExp)^2
+      nControl<-length(changeDistControl)
+      nExp<-length(changeDistExp)
+      x<-(nControl-1)*varControl
+      y<-(nExp-1)*varExp
+      stanDev<-sqrt((x+y)/(nControl+nExp-2)) #pooled standard deviation
+      
+      # Compute effect size (cohen's d)
+      d <- changeInChange/stanDev
+      
+      # compute 95% confidence interval
+      stError<-sqrt((varControl/nControl)+(varExp/nExp))
+      lower<-changeInChange-1.96*(stError)
+      upper<-changeInChange+1.96*(stError)
+      
+      tTestList<-numeric(12)
+      if(!is.na(changeInChange)&&!is.na(changeInChange)){
+        totalN<-(power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$n)*2
+        fromPop<-ceiling(totalN)*(length(datSubset$node)/length(which(datSubset$node==flag)))
+        
+        #power.t.test(n=NULL, delta=(hinge-avgChangeControl), sd=stanDev, sig.level=0.05 ,power=0.80,type="paired",alternative="two.sided")
+        
+        tTestList[1]<-"Paired t test power calculation"
+        tTestList[2]<-paste("pairs =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$n)
+        tTestList[3]<-paste("total n =",totalN)
+        tTestList[4]<-paste("delta =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$delta)
+        tTestList[5]<-paste("sd =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$sd)
+        tTestList[6]<-paste("sig. level =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$sig.level)
+        tTestList[7]<-paste("power =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$power)
+        tTestList[8]<-paste("alternative =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$alternative)
+        tTestList[9]<-"NOTE: sd is std.dev. of *differences* within pairs"
+        tTestList[10]<-paste("effect size =",d)
+        tTestList[11]<-paste("Confidence Interval =","(",lower,",",upper,")")
+        tTestList[12]<-paste("Population sample needed for cohort",flag,"=",fromPop)
+      } else {
+        tTestList[1]<-"UNDEFINED"
+      }   
+      sampleNeededY[pts]<-totalN
+      populationSampleNeededY[pts]<-fromPop
+      effectSizeY[pts]<-d
+      }
+      
+      xrange<-c(1:rangeFix)
+      yrange<-c(1:max(500,rangeFix))
+      
+      #sampleNeededY
+      #populationSampleNeededY
+      #effectSizeY
+      
+      sampleNeededY_diff<-numeric(length(sampleNeededY)-1)
+      
+      for(i in 1:length(sampleNeededY_diff)){
+        sampleNeededY_diff[i]<-sampleNeededY[i]-sampleNeededY[i+1]
+      }
+      # Only include sample requirements where the difference between subsequent increases in the threshold leads to no more than one less person required
+      sampleNeededY_plot<<-sampleNeededY[sampleNeededY_diff>1]   
+      ptsRange_plot<<-ptsRange[sampleNeededY_diff>1]
+      
+      effectSizeY_plot<<- effectSizeY[sampleNeededY_diff>1]
+      populationSampleNeededY_plot<<-populationSampleNeededY[sampleNeededY_diff>1]
+      
+      plot(ptsRange_plot, sampleNeededY_plot, type="n",xlab="Therapeutic Improvement over Control",ylab="Sample Size Required")
+      lines(ptsRange_plot, sampleNeededY_plot, type="b")
+      #lines(ptsRange, populationSampleNeededY, type="b")
+      #lines(ptsRange, effectSizeY, type="b")
+      
+      sampleNeededY<<-sampleNeededY
+      populationSampleNeededY<<-populationSampleNeededY
+      effectSizeY<<-effectSizeY
+      
+      ptsRange_plot<<-ptsRange_plot
+      sampleNeededY_plot<<-sampleNeededY_plot
+      
+      effectSizeY_plot<<- effectSizeY_plot
+      populationSampleNeededY_plot<<-populationSampleNeededY_plot
+      }
+    }
+  })
+  
+  output$powerCalcTable <- renderTable({
+    baseline<-input$bl
+    flag<-input$nodesRadio
+    if(exists("ptsRange_plot")&&exists("sampleNeededY_plot")&&(length(ptsRange_plot)==length(sampleNeededY_plot)))
+    {
+    head(cbind(ptsRange_plot,sampleNeededY_plot,populationSampleNeededY_plot,effectSizeY_plot),n=length(ptsRange_plot))
+    }
+  })
+  
+  
+  
+  ## NOT WORKING YET: Coding a download button in progress
+  
+  #   output$plot <- renderPlot(function() {
+  #     name <- paste0(input$filename, ".png")
+  #     if(input$savePlot) {
+  #       ggsave(name, plotInput(), type="cairo-png")
+  #     }
+  #     else print(plotInput())
+  #   })
+  
+  #   output$downloadData <- downloadHandler(
+  #     filename = function() { paste('Report', '.csv', sep='') },
+  #     content = function(file) {
+  #       write.csv(renderDataTable(), file)
+  #     }
+  #   )
+  
+  
+  
+  
+  #   output$downloadReport <- downloadHandler(
+  #     filename = function() {
+  #       paste('my-report', sep = '.', switch(
+  #         input$format, PDF = 'pdf', HTML = 'html', Word = 'docx'
+  #       ))
+  #     },
+  #     
+  #     content = function(file) {
+  #       src <- normalizePath('report.Rmd')
+  #       
+  #       # temporarily switch to the temp dir, in case you do not have write
+  #       # permission to the current working directory
+  #       owd <- setwd(tempdir())
+  #       on.exit(setwd(owd))
+  #       file.copy(src, 'report.Rmd')
+  #       
+  #       library(rmarkdown)
+  #       out <- render('report.Rmd', switch(
+  #         input$format,
+  #         PDF = pdf_document(), HTML = html_document(), Word = word_document()
+  #       ))
+  #       file.rename(out, file)
+  #     }
+  #   )
+  #}
+  
+  
+})
