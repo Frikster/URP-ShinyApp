@@ -1,27 +1,60 @@
-# server.R
-# Use for debugging: runApp("YourAppName(Filename)", display.mode = "showcase")
-rm(list=ls())
+rm(list = ls())
+# Immediately enter the browser when an error occurs
+# options(error = browser)
+# To exit browser = Q
+
 library(shiny)
+library(leaflet)
+library(DT)
 library(party)
+library(stringr)
 
 shinyServer(function(input, output, clientData, session) {
   
-  dataset<-reactive({
-    input$file
-    if(is.null(input$file)){
-      (data.frame())
+  inFile<-reactive({
+    input$file1
+    if(is.null(input$file1)){
+      return(NULL)
     }
     else{
-      filename<-input$file
-      load(filename$datapath)
-      dat
-    }
+      read.csv(input$file1$datapath, header=input$header, sep=input$sep, quote=input$quote)
+      }
   })
   
+  output$subsettingTable <- DT::renderDataTable(
+    inFile(), filter = 'top', server = FALSE,
+    options = list(pageLength = 5, autoWidth = TRUE
+    ))
+  
+  
+  # download the filtered data
+  output$downloadSubset = downloadHandler('filtered.csv', content = function(file) {
+    s = input$subsettingTable_rows_all
+    #browser()
+    inFile()
+    write.csv(inFile()[s, , drop = FALSE], file)
+  })
+  
+  ############ JUNE 2015 MASTER SERVER
+  
+#   dataset<-reactive({
+#     input$subsettingTable_rows_all
+#     #input$file
+#     if(is.null(input$subsettingTable_rows_all)){
+#       (data.frame())
+#     }
+#     else{
+#       inFile()
+#       
+#       #filename<-input$file
+#       #load(filename$datapath)
+#       #dat
+#     }
+#   })
+  
   observe({ 
-    updateSelectInput(session,"an", 
-                      "Anchor:", 
-                      c(unique(as.character(names(dataset())))))
+    updateSelectInput(session,"an", "Anchor:", c(unique(as.character(names(inFile())))))
+    # updateSelectInput(session,"an", "Anchor:", c(unique(as.character(names(dataset())))))
   })  
   
   
@@ -29,11 +62,13 @@ shinyServer(function(input, output, clientData, session) {
     input$go
     # Set the label, choices, and selected item based on written input
     if(input$control_preds!=""){
-      toBeChecked<-names(dataset())[grepl(paste(strsplit(input$control_preds,",")[[1]],collapse="|"),names(dataset()))]
+      strSplitSelections = strsplit(input$control_preds,",")[[1]]
+      strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
+      toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
     }
     else
     {
-      toBeChecked<-names(dataset())
+      toBeChecked<-names(inFile())
     }
     
     
@@ -48,12 +83,12 @@ shinyServer(function(input, output, clientData, session) {
     #toBeChecked<-names(dataset())[grepl(paste(input$control_preds),names(dataset()))]
     updateCheckboxGroupInput(session, "preds",
                              'Choose Predictors',
-                             choices = names(dataset()),
+                             choices = names(inFile()),
                              selected = toBeChecked[toBeChecked!=input$an])    
     updateCheckboxGroupInput(session, "tableviewPreds",
                              'Choose Predictors',
-                             choices = names(dataset()),
-                             selected = names(dataset())[grepl(paste(strsplit(input$control_tableviewPreds,",")[[1]],collapse="|"),names(dataset()))])      
+                             choices = names(inFile()),
+                             selected = names(inFile())[grepl(paste(strsplit(input$control_tableviewPreds,",")[[1]],collapse="|"),names(inFile()))])      
     if(exists("datSubset")&&!is.null(datSubset$node)){
       updateRadioButtons(session,"nodesRadio",
                          h3("Choose Node to Display"),
@@ -70,7 +105,7 @@ shinyServer(function(input, output, clientData, session) {
     }
     else {
       isolate({
-        datSubset<<-subset(dataset(),dataset()[,input$an]!="NA")  
+        datSubset<<-subset(inFile(),inFile()[,input$an]!="NA")  
         anchor <- datSubset[,input$an]
         predictors <- datSubset[,input$preds]
         urp<<-ctree(anchor~., data=data.frame(anchor,predictors))
@@ -136,7 +171,7 @@ shinyServer(function(input, output, clientData, session) {
   })
   
   # Filter data based on selections
-  output$table <- renderDataTable({
+  output$postUrpTable <- renderDataTable({
     if(input$tableButton<=0){
       return()
     }
@@ -147,7 +182,7 @@ shinyServer(function(input, output, clientData, session) {
   })
   
   
- # toBeChecked<-names(dataset())[grepl(paste(strsplit(input$control_preds,",")[[1]],collapse="|"),names(dataset()))]
+  # toBeChecked<-names(inFile())[grepl(paste(strsplit(input$control_preds,",")[[1]],collapse="|"),names(inFile()))]
   
   
   output$AISTable<-renderTable({
@@ -155,7 +190,7 @@ shinyServer(function(input, output, clientData, session) {
       return()
     }
     else{
-    table(datSubset[c("AIS.6Months","node")])
+      table(datSubset[c("AIS.6Months","node")])
     }
   })
   
@@ -225,130 +260,130 @@ shinyServer(function(input, output, clientData, session) {
     flag<-input$nodesRadio
     
     if(exists("datSubset")&&!is.null(datSubset$node)&&(baseline!="")&&exists("flag")&&exists("baseline")){
-    #powerCalcPts(flag,baseline,pts){
-    anchorType<-strsplit(names(datSubset)[1],"\\.")[[1]][1]
-    title_anchor<-names(datSubset[1])
-    #flag<-1
-    #while(flag<=max(datSubset$node,na.rm=TRUE)){
-    group<-subset(datSubset,node==flag)
-    
-    # If the current value of flag is a valid node
-    if(length(group$node)>0){
-      distribution2<-subset(group,select=title_anchor)
-      distribution1<-subset(group,select=paste(anchorType,".",baseline,sep=""))
+      #powerCalcPts(flag,baseline,pts){
+      anchorType<-strsplit(names(datSubset)[1],"\\.")[[1]][1]
+      title_anchor<-names(datSubset[1])
+      #flag<-1
+      #while(flag<=max(datSubset$node,na.rm=TRUE)){
+      group<-subset(datSubset,node==flag)
       
-      changeDistControl<-distribution2[[1]]-distribution1[[1]]
-      changeDistControl<-subset(changeDistControl,changeDistControl!="NA")
-      avgChangeControl<-mean(changeDistControl)
-      
-      #     upperHinge<-boxplot(distribution2[[1]])$stats[4,1]
-      #     lowerHinge<-boxplot(distribution2[[1]])$stats[4,1]
-      #     if(anchorType=="at10m"){
-      #       hinge<-lowerHinge
-      #     } else{
-      #       hinge<-upperHinge
-      #     }
-      
-      rangeFinder<-subset(datSubset,select=grepl(paste(anchorType,".",sep=""),colnames(datSubset),fixed=TRUE))
-      rangeFinder<-sapply(rangeFinder,as.numeric)
-      # FIX THIS LINE (datSubset$anchor undefined):
-      rangeFix<<-max(cbind(rangeFinder,datSubset$anchor[,1]),na.rm=TRUE)  
-      # boxplot(distributions,cex.main=1.4,ylim=c(0,rangeFix),cex.axis=1.6)
-      
-      # range of treatment effect
-      ptsRange <- c(2:rangeFix)
-      
-      sampleNeededY<-numeric(rangeFix)
-      populationSampleNeededY<-numeric(rangeFix)
-      effectSizeY<-numeric(rangeFix)
-      
-      
-      for(pts in ptsRange){
-      distribution_ptsInc<-distribution2[[1]]+pts
-      distribution_ptsInc[distribution_ptsInc>rangeFix]<-rangeFix
+      # If the current value of flag is a valid node
+      if(length(group$node)>0){
+        distribution2<-subset(group,select=title_anchor)
+        distribution1<-subset(group,select=paste(anchorType,".",baseline,sep=""))
         
-      changeDistExp<-distribution_ptsInc-distribution1[[1]]
-      changeDistExp<-subset(changeDistExp,changeDistExp!="NA")
-      avgChangeExp<-mean(changeDistExp)
-      
-      changeInChange<-avgChangeExp-avgChangeControl 
-      
-      varControl<-sd(changeDistControl)^2
-      varExp<-sd(changeDistExp)^2
-      nControl<-length(changeDistControl)
-      nExp<-length(changeDistExp)
-      x<-(nControl-1)*varControl
-      y<-(nExp-1)*varExp
-      stanDev<-sqrt((x+y)/(nControl+nExp-2)) #pooled standard deviation
-      
-      # Compute effect size (cohen's d)
-      d <- changeInChange/stanDev
-      
-      # compute 95% confidence interval
-      stError<-sqrt((varControl/nControl)+(varExp/nExp))
-      lower<-changeInChange-1.96*(stError)
-      upper<-changeInChange+1.96*(stError)
-      
-      tTestList<-numeric(12)
-      if(!is.na(changeInChange)&&!is.na(changeInChange)){
-        totalN<-(power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$n)*2
-        fromPop<-ceiling(totalN)*(length(datSubset$node)/length(which(datSubset$node==flag)))
+        changeDistControl<-distribution2[[1]]-distribution1[[1]]
+        changeDistControl<-subset(changeDistControl,changeDistControl!="NA")
+        avgChangeControl<-mean(changeDistControl)
         
-        #power.t.test(n=NULL, delta=(hinge-avgChangeControl), sd=stanDev, sig.level=0.05 ,power=0.80,type="paired",alternative="two.sided")
+        #     upperHinge<-boxplot(distribution2[[1]])$stats[4,1]
+        #     lowerHinge<-boxplot(distribution2[[1]])$stats[4,1]
+        #     if(anchorType=="at10m"){
+        #       hinge<-lowerHinge
+        #     } else{
+        #       hinge<-upperHinge
+        #     }
         
-        tTestList[1]<-"Paired t test power calculation"
-        tTestList[2]<-paste("pairs =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$n)
-        tTestList[3]<-paste("total n =",totalN)
-        tTestList[4]<-paste("delta =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$delta)
-        tTestList[5]<-paste("sd =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$sd)
-        tTestList[6]<-paste("sig. level =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$sig.level)
-        tTestList[7]<-paste("power =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$power)
-        tTestList[8]<-paste("alternative =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$alternative)
-        tTestList[9]<-"NOTE: sd is std.dev. of *differences* within pairs"
-        tTestList[10]<-paste("effect size =",d)
-        tTestList[11]<-paste("Confidence Interval =","(",lower,",",upper,")")
-        tTestList[12]<-paste("Population sample needed for cohort",flag,"=",fromPop)
-      } else {
-        tTestList[1]<-"UNDEFINED"
-      }   
-      sampleNeededY[pts]<-totalN
-      populationSampleNeededY[pts]<-fromPop
-      effectSizeY[pts]<-d
-      }
-      
-      xrange<-c(1:rangeFix)
-      yrange<-c(1:max(500,rangeFix))
-      
-      #sampleNeededY
-      #populationSampleNeededY
-      #effectSizeY
-      
-      sampleNeededY_diff<-numeric(length(sampleNeededY)-1)
-      
-      for(i in 1:length(sampleNeededY_diff)){
-        sampleNeededY_diff[i]<-sampleNeededY[i]-sampleNeededY[i+1]
-      }
-      # Only include sample requirements where the difference between subsequent increases in the threshold leads to no more than one less person required
-      sampleNeededY_plot<<-sampleNeededY[sampleNeededY_diff>1]   
-      ptsRange_plot<<-ptsRange[sampleNeededY_diff>1]
-      
-      effectSizeY_plot<<- effectSizeY[sampleNeededY_diff>1]
-      populationSampleNeededY_plot<<-populationSampleNeededY[sampleNeededY_diff>1]
-      
-      plot(ptsRange_plot, sampleNeededY_plot, type="n",xlab="Therapeutic Improvement over Control",ylab="Sample Size Required")
-      lines(ptsRange_plot, sampleNeededY_plot, type="b")
-      #lines(ptsRange, populationSampleNeededY, type="b")
-      #lines(ptsRange, effectSizeY, type="b")
-      
-      sampleNeededY<<-sampleNeededY
-      populationSampleNeededY<<-populationSampleNeededY
-      effectSizeY<<-effectSizeY
-      
-      ptsRange_plot<<-ptsRange_plot
-      sampleNeededY_plot<<-sampleNeededY_plot
-      
-      effectSizeY_plot<<- effectSizeY_plot
-      populationSampleNeededY_plot<<-populationSampleNeededY_plot
+        rangeFinder<-subset(datSubset,select=grepl(paste(anchorType,".",sep=""),colnames(datSubset),fixed=TRUE))
+        rangeFinder<-sapply(rangeFinder,as.numeric)
+        # FIX THIS LINE (datSubset$anchor undefined):
+        rangeFix<<-max(cbind(rangeFinder,datSubset$anchor[,1]),na.rm=TRUE)  
+        # boxplot(distributions,cex.main=1.4,ylim=c(0,rangeFix),cex.axis=1.6)
+        
+        # range of treatment effect
+        ptsRange <- c(2:rangeFix)
+        
+        sampleNeededY<-numeric(rangeFix)
+        populationSampleNeededY<-numeric(rangeFix)
+        effectSizeY<-numeric(rangeFix)
+        
+        
+        for(pts in ptsRange){
+          distribution_ptsInc<-distribution2[[1]]+pts
+          distribution_ptsInc[distribution_ptsInc>rangeFix]<-rangeFix
+          
+          changeDistExp<-distribution_ptsInc-distribution1[[1]]
+          changeDistExp<-subset(changeDistExp,changeDistExp!="NA")
+          avgChangeExp<-mean(changeDistExp)
+          
+          changeInChange<-avgChangeExp-avgChangeControl 
+          
+          varControl<-sd(changeDistControl)^2
+          varExp<-sd(changeDistExp)^2
+          nControl<-length(changeDistControl)
+          nExp<-length(changeDistExp)
+          x<-(nControl-1)*varControl
+          y<-(nExp-1)*varExp
+          stanDev<-sqrt((x+y)/(nControl+nExp-2)) #pooled standard deviation
+          
+          # Compute effect size (cohen's d)
+          d <- changeInChange/stanDev
+          
+          # compute 95% confidence interval
+          stError<-sqrt((varControl/nControl)+(varExp/nExp))
+          lower<-changeInChange-1.96*(stError)
+          upper<-changeInChange+1.96*(stError)
+          
+          tTestList<-numeric(12)
+          if(!is.na(changeInChange)&&!is.na(changeInChange)){
+            totalN<-(power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$n)*2
+            fromPop<-ceiling(totalN)*(length(datSubset$node)/length(which(datSubset$node==flag)))
+            
+            #power.t.test(n=NULL, delta=(hinge-avgChangeControl), sd=stanDev, sig.level=0.05 ,power=0.80,type="paired",alternative="two.sided")
+            
+            tTestList[1]<-"Paired t test power calculation"
+            tTestList[2]<-paste("pairs =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$n)
+            tTestList[3]<-paste("total n =",totalN)
+            tTestList[4]<-paste("delta =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$delta)
+            tTestList[5]<-paste("sd =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$sd)
+            tTestList[6]<-paste("sig. level =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$sig.level)
+            tTestList[7]<-paste("power =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$power)
+            tTestList[8]<-paste("alternative =",power.t.test(n=NULL, delta=(changeInChange), sd=stanDev, sig.level=0.05 ,power=0.8,type="two.sample",alternative="two.sided")$alternative)
+            tTestList[9]<-"NOTE: sd is std.dev. of *differences* within pairs"
+            tTestList[10]<-paste("effect size =",d)
+            tTestList[11]<-paste("Confidence Interval =","(",lower,",",upper,")")
+            tTestList[12]<-paste("Population sample needed for cohort",flag,"=",fromPop)
+          } else {
+            tTestList[1]<-"UNDEFINED"
+          }   
+          sampleNeededY[pts]<-totalN
+          populationSampleNeededY[pts]<-fromPop
+          effectSizeY[pts]<-d
+        }
+        
+        xrange<-c(1:rangeFix)
+        yrange<-c(1:max(500,rangeFix))
+        
+        #sampleNeededY
+        #populationSampleNeededY
+        #effectSizeY
+        
+        sampleNeededY_diff<-numeric(length(sampleNeededY)-1)
+        
+        for(i in 1:length(sampleNeededY_diff)){
+          sampleNeededY_diff[i]<-sampleNeededY[i]-sampleNeededY[i+1]
+        }
+        # Only include sample requirements where the difference between subsequent increases in the threshold leads to no more than one less person required
+        sampleNeededY_plot<<-sampleNeededY[sampleNeededY_diff>1]   
+        ptsRange_plot<<-ptsRange[sampleNeededY_diff>1]
+        
+        effectSizeY_plot<<- effectSizeY[sampleNeededY_diff>1]
+        populationSampleNeededY_plot<<-populationSampleNeededY[sampleNeededY_diff>1]
+        
+        plot(ptsRange_plot, sampleNeededY_plot, type="n",xlab="Therapeutic Improvement over Control",ylab="Sample Size Required")
+        lines(ptsRange_plot, sampleNeededY_plot, type="b")
+        #lines(ptsRange, populationSampleNeededY, type="b")
+        #lines(ptsRange, effectSizeY, type="b")
+        
+        sampleNeededY<<-sampleNeededY
+        populationSampleNeededY<<-populationSampleNeededY
+        effectSizeY<<-effectSizeY
+        
+        ptsRange_plot<<-ptsRange_plot
+        sampleNeededY_plot<<-sampleNeededY_plot
+        
+        effectSizeY_plot<<- effectSizeY_plot
+        populationSampleNeededY_plot<<-populationSampleNeededY_plot
       }
     }
   })
@@ -358,57 +393,13 @@ shinyServer(function(input, output, clientData, session) {
     flag<-input$nodesRadio
     if(exists("ptsRange_plot")&&exists("sampleNeededY_plot")&&(length(ptsRange_plot)==length(sampleNeededY_plot)))
     {
-    head(cbind(ptsRange_plot,sampleNeededY_plot,populationSampleNeededY_plot,effectSizeY_plot),n=length(ptsRange_plot))
+      head(cbind(ptsRange_plot,sampleNeededY_plot,populationSampleNeededY_plot,effectSizeY_plot),n=length(ptsRange_plot))
     }
   })
   
   
+
   
-  ## NOT WORKING YET: Coding a download button in progress
-  
-  #   output$plot <- renderPlot(function() {
-  #     name <- paste0(input$filename, ".png")
-  #     if(input$savePlot) {
-  #       ggsave(name, plotInput(), type="cairo-png")
-  #     }
-  #     else print(plotInput())
-  #   })
-  
-  #   output$downloadData <- downloadHandler(
-  #     filename = function() { paste('Report', '.csv', sep='') },
-  #     content = function(file) {
-  #       write.csv(renderDataTable(), file)
-  #     }
-  #   )
-  
-  
-  
-  
-  #   output$downloadReport <- downloadHandler(
-  #     filename = function() {
-  #       paste('my-report', sep = '.', switch(
-  #         input$format, PDF = 'pdf', HTML = 'html', Word = 'docx'
-  #       ))
-  #     },
-  #     
-  #     content = function(file) {
-  #       src <- normalizePath('report.Rmd')
-  #       
-  #       # temporarily switch to the temp dir, in case you do not have write
-  #       # permission to the current working directory
-  #       owd <- setwd(tempdir())
-  #       on.exit(setwd(owd))
-  #       file.copy(src, 'report.Rmd')
-  #       
-  #       library(rmarkdown)
-  #       out <- render('report.Rmd', switch(
-  #         input$format,
-  #         PDF = pdf_document(), HTML = html_document(), Word = word_document()
-  #       ))
-  #       file.rename(out, file)
-  #     }
-  #   )
-  #}
   
   
 })
