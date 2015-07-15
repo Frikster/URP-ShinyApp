@@ -8,6 +8,7 @@ library(leaflet)
 library(DT)
 library(party)
 library(stringr)
+options(shiny.maxRequestSize=30*1024^2) 
 
 shinyServer(function(input, output, clientData, session) {
   
@@ -17,14 +18,58 @@ shinyServer(function(input, output, clientData, session) {
       return(NULL)
     }
     else{
-      read.csv(input$file1$datapath, header=input$header, sep=input$sep, quote=input$quote)
+      read.csv(input$file1$datapath, header=input$header, sep=input$sep, quote=input$quote)#[,c(colnames(datSubset)[1],"node",input$colDisplay)]
       }
   })
   
+  observe({ 
+    # Set the label, choices, and selected item based on written input
+    if(input$control_cols!=""){
+      strSplitSelections = strsplit(input$control_cols,",")[[1]]
+      strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
+      toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
+    }
+    else
+    {
+      toBeChecked<-names(inFile())
+    }
+    updateCheckboxGroupInput(session, "colDisplay",
+                             'Choose Columns to display',
+                             choices = names(inFile()),
+                             selected = toBeChecked[toBeChecked!=input$an])   
+  })
+  
+  
+  subsetTable<-reactive({
+    #browser()
+    if(is.null(input$colDisplay)||input$colDisplay=="data not loaded"){
+      browser()
+      inFile()[,c(colnames(inFile())[1],colnames(inFile())[2])]
+    }
+    else{ 
+      browser()
+      inFile()[,c(colnames(inFile())[1],input$colDisplay)]
+      }
+  })
+  
+  
   output$subsettingTable <- DT::renderDataTable(
-    inFile(), filter = 'top', server = FALSE,
+    subsetTable(), filter = 'top', server = FALSE,
     options = list(pageLength = 5, autoWidth = TRUE
     ))
+  
+  
+#   # Filter data based on selections
+#   output$postUrpTable <- renderDataTable({
+#     if(input$tableButton<=0){
+#       return()
+#     }
+#     else{ 
+#       
+#       datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
+#     }
+#   })
+  
   
   
   # download the filtered data
@@ -35,7 +80,7 @@ shinyServer(function(input, output, clientData, session) {
     write.csv(inFile()[s, , drop = FALSE], file)
   })
   
-  ############ JUNE 2015 MASTER SERVER
+############ JUNE 2015 MASTER SERVER
   
 #   dataset<-reactive({
 #     input$subsettingTable_rows_all
@@ -98,13 +143,22 @@ shinyServer(function(input, output, clientData, session) {
     }
   })
   
+  sliderWidth<-reactive({
+    as.integer(input$sliderWidth)
+  })
+  
+  sliderHeight<-reactive({
+    as.integer(input$sliderHeight)
+  })
+  
+  
   # Construct URP-Ctree
   output$plot <- renderPlot({  
     if(input$go==0){
       return()
     }
     else {
-      isolate({
+     isolate({
         datSubset<<-subset(inFile(),inFile()[,input$an]!="NA")  
         anchor <- datSubset[,input$an]
         predictors <- datSubset[,input$preds]
@@ -151,9 +205,9 @@ shinyServer(function(input, output, clientData, session) {
           gridAxis_Ref<-sub("(.*?):.*", "\\1", treeGridList_yaxis)[i]
           grid.edit(gridAxis_Ref, gp=gpar(fontsize=18))
         }
-      })
+    })
     }
-  },height = 1000, width = 1000)
+  },height = 500, width = 500)
   
   output$nodePlot <- renderPlot({ 
     input$nodesRadio

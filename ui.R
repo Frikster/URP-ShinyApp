@@ -1,6 +1,6 @@
 rm(list = ls())
-# Immediately enter the browser when an error occurs
-#options(error = browser)
+# Immediately enter the browser/some function when an error occurs
+#options(error = some funcion)
 
 library(shiny)
 library(DT)
@@ -27,7 +27,12 @@ shinyUI(fluidPage(
                    c(None='',
                      'Double Quote'='"',
                      'Single Quote'="'"),
-                   '"')
+                   '"'),
+      textInput("control_cols",
+                "Type to check display all columns that contain a string. Erase to select all. NOTE: Selecting many columns will slow down the time it takes for the table to be displayed. Be patient.",
+                "Note: Alphanumerics only"),
+      checkboxGroupInput('colDisplay', 'Choose Columns to display',
+                         c("data not loaded"), selected = c("data not loaded"))
     ),
     
     # SIDEBAR UI FROM JUNE 2015 MASTER
@@ -65,12 +70,14 @@ shinyUI(fluidPage(
         id = 'tab',
         tabPanel('Subsetting',       
                  hr(),
-                 #dataTableOutput(outputId="contents")
                  DT::dataTableOutput("subsettingTable"),
                  downloadButton('downloadSubset', 'Download Subset')
                  #tableOutput('contents')),
         ),   
-        tabPanel('URP', plotOutput("plot", width = "100%")),
+        tabPanel('URP', 
+                 sliderInput("sliderWidth", label = "", min = 10, max = 3000, value = 1000),
+                 sliderInput("sliderHeight", label = "", min = 10, max = 3000, value = 1000),
+                 plotOutput("plot", width = "100%")),
         tabPanel('URP-table', dataTableOutput(outputId="postUrpTable"))
       )
       
