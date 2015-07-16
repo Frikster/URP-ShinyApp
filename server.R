@@ -113,7 +113,7 @@ shinyServer(function(input, output, clientData, session) {
   
   
   observe({
-    input$go
+    #input$go
     # Set the label, choices, and selected item based on written input
     if(input$control_preds!=""){
       strSplitSelections = strsplit(input$control_preds,",")[[1]]
@@ -124,10 +124,6 @@ shinyServer(function(input, output, clientData, session) {
     {
       toBeChecked<-names(inFile())
     }
-    
-    
-    
-    
     ####
     #subset multiple selections (comma separated)
     #controlPredsList<-unlist(strsplit(input$control_preds,",")) 
@@ -280,6 +276,8 @@ shinyServer(function(input, output, clientData, session) {
   
   
   # toBeChecked<-names(inFile())[grepl(paste(strsplit(input$control_preds,",")[[1]],collapse="|"),names(inFile()))]
+  
+  ########### EVERYTHING BELOW HAS NOT GOT A PART IN UI YET ######################
   
   
   output$AISTable<-renderTable({
