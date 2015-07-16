@@ -9,6 +9,9 @@ library(DT)
 library(party)
 library(stringr)
 options(shiny.maxRequestSize=30*1024^2) 
+calls_read.csv<-0
+h <- 100
+w <- 500
 
 shinyServer(function(input, output, clientData, session) {
   
@@ -18,7 +21,12 @@ shinyServer(function(input, output, clientData, session) {
       return(NULL)
     }
     else{
-      read.csv(input$file1$datapath, header=input$header, sep=input$sep, quote=input$quote)#[,c(colnames(datSubset)[1],"node",input$colDisplay)]
+      calls_read.csv <<- calls_read.csv + 1
+      start.time <- Sys.time()
+      inF<-read.csv(input$file1$datapath, header=input$header, sep=input$sep, quote=input$quote)#[,c(colnames(datSubset)[1],"node",input$colDisplay)]
+      end.time <- Sys.time()
+      time_read.csv <<- end.time - start.time
+      inF
       }
   })
   
@@ -43,12 +51,13 @@ shinyServer(function(input, output, clientData, session) {
   subsetTable<-reactive({
     #browser()
     if(is.null(input$colDisplay)||input$colDisplay=="data not loaded"){
-      browser()
-      inFile()[,c(colnames(inFile())[1],colnames(inFile())[2])]
+     # browser()
+     # inFile()[,c(colnames(inFile())[1],colnames(inFile())[2])]
     }
     else{ 
-      browser()
-      inFile()[,c(colnames(inFile())[1],input$colDisplay)]
+    #  browser()
+    #  inFile()[,c(colnames(inFile())[1],input$colDisplay)]
+      inFile()[,input$colDisplay,drop=FALSE]
       }
   })
   
@@ -151,9 +160,18 @@ shinyServer(function(input, output, clientData, session) {
     as.integer(input$sliderHeight)
   })
   
+  observe({
+    w<<-sliderWidth()
+    h<<-sliderHeight()
+  })
+  
+
   
   # Construct URP-Ctree
-  output$plot <- renderPlot({  
+  output$plot <- renderPlot({
+    #h <- sliderHeight()
+    #w <- sliderWidth()
+    #browser()
     if(input$go==0){
       return()
     }
@@ -207,7 +225,8 @@ shinyServer(function(input, output, clientData, session) {
         }
     })
     }
-  },height = 500, width = 500)
+    #browser()
+  },height = h, width = w)
   
   output$nodePlot <- renderPlot({ 
     input$nodesRadio
@@ -225,14 +244,38 @@ shinyServer(function(input, output, clientData, session) {
   })
   
   # Filter data based on selections
-  output$postUrpTable <- renderDataTable({
-    if(input$tableButton<=0){
-      return()
+#   output$postUrpTable <- renderDataTable({
+#     if(input$tableButton<=0){
+#       return()
+#     }
+#     else{ 
+#       
+#       datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
+#     }
+#   })
+  
+  subsetCtreeTable<-reactive({
+    if(is.null(input$tableviewPreds)||input$tableviewPreds=="data not loaded"){
+      datSubset[,c(colnames(datSubset)[1],"node")]
     }
     else{ 
-      
       datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
     }
+  })
+  
+  
+  # Filter data based on selections
+  output$postUrpTable <- DT::renderDataTable(
+    subsetCtreeTable(), filter = 'top', server = FALSE,
+    options = list(pageLength = 5, autoWidth = TRUE
+    ))
+ 
+  ########################################### 
+  # download the filtered data
+  output$downloadCtreeSubset = downloadHandler('filtered.csv', content = function(file) {
+    s = input$postUrpTable_rows_all
+    #inFile()
+    write.csv(datSubset[s, , drop = FALSE], file)
   })
   
   

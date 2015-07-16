@@ -44,6 +44,7 @@ shinyUI(fluidPage(
     textInput("control_preds",
               "Type to check all predictors that contain a string. Erase to select all",
               "Note: Alphanumerics only"),
+    actionButton("updatePreds", "Update Predictors"),
     textInput("title_urp",
               "Insert Title"),
     # Create a new Row in the UI for selectInputs
@@ -77,8 +78,11 @@ shinyUI(fluidPage(
         tabPanel('URP', 
                  sliderInput("sliderWidth", label = "", min = 10, max = 3000, value = 1000),
                  sliderInput("sliderHeight", label = "", min = 10, max = 3000, value = 1000),
-                 plotOutput("plot", width = "100%")),
-        tabPanel('URP-table', dataTableOutput(outputId="postUrpTable"))
+                 plotOutput("plot", inline = TRUE)),
+        tabPanel('URP-table',
+                 DT::dataTableOutput(outputId="postUrpTable"),
+                 downloadButton('downloadCtreeSubset', 'Download Ctree Subset'))
+        
       )
       
       
