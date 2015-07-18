@@ -160,10 +160,10 @@ shinyServer(function(input, output, clientData, session) {
                              'Choose Predictors',
                              choices = names(inFile()),
                              selected = toBeChecked[toBeChecked!=input$an])    
-    updateCheckboxGroupInput(session, "tableviewPreds",
-                             'Choose Predictors',
-                             choices = names(inFile()),
-                             selected = names(inFile())[grepl(paste(strsplit(input$control_tableviewPreds,",")[[1]],collapse="|"),names(inFile()))])      
+#     updateCheckboxGroupInput(session, "tableviewPreds",
+#                              'Choose Predictors',
+#                              choices = names(inFile()),
+#                              selected = names(inFile())[grepl(paste(strsplit(input$control_tableviewPreds,",")[[1]],collapse="|"),names(inFile()))])      
     if(exists("datSubset")&&!is.null(datSubset$node)){
       updateRadioButtons(session,"nodesRadio",
                          h3("Choose Node to Display"),
@@ -263,7 +263,9 @@ shinyServer(function(input, output, clientData, session) {
       }
     }
   })
-  
+
+# Third panel  
+    
   # Filter data based on selections
 #   output$postUrpTable <- renderDataTable({
 #     if(input$tableButton<=0){
@@ -275,12 +277,30 @@ shinyServer(function(input, output, clientData, session) {
 #     }
 #   })
   
+  observe({ 
+    # Set the label, choices, and selected item based on written input
+    if(is.null(inFile)||input$go==0){
+      #Do jack diddly-squat
+      
+    }
+    else{
+      updateSelectizeInput(session, "tableviewPreds",
+                               'Choose Predictors',
+                               choices = names(inFile())) 
+    }
+  })
+  
+  
   subsetCtreeTable<-reactive({
     if(is.null(input$tableviewPreds)||input$tableviewPreds=="data not loaded"){
-      datSubset[,c(colnames(datSubset)[1],"node")]
+      #datSubset[,c(colnames(datSubset)[1],"node")]
     }
     else{ 
-      datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
+      if(input$updateColsDisplay>0){
+        isolate({
+          datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
+        })
+      }
     }
   })
   
@@ -291,7 +311,7 @@ shinyServer(function(input, output, clientData, session) {
     options = list(pageLength = 5, autoWidth = TRUE
     ))
  
-  ########################################### 
+
   # download the filtered data
   output$downloadCtreeSubset = downloadHandler('filtered.csv', content = function(file) {
     s = input$postUrpTable_rows_all

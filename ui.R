@@ -60,12 +60,14 @@ shinyUI(fluidPage(
     
     conditionalPanel(
       'input.tab === "URP-table"', 
-      textInput("control_tableviewPreds",
-                "Type to check all predictors that contain a string. Erase to select all",
-                "Note: Alphanumerics only"),
-      actionButton("tableButton", "Tabulate"),
-      checkboxGroupInput('tableviewPreds', 'Choose Predictors to display',
-                         c("data not loaded"), selected = NA)
+      selectizeInput('tableviewPreds', 'Choose Predictors to display', choices = c("data not loaded"), multiple = TRUE),
+      
+#       textInput("control_tableviewPreds",
+#                 "Type to check all predictors that contain a string. Erase to select all",
+#                 "Note: Alphanumerics only"),
+      actionButton("tableButton", "Tabulate")
+#       checkboxGroupInput('tableviewPreds', 'Choose Predictors to display',
+#                          c("data not loaded"), selected = NA)
     )
     
     ),    
