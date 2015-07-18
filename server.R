@@ -135,43 +135,72 @@ shinyServer(function(input, output, clientData, session) {
     # updateSelectInput(session,"an", "Anchor:", c(unique(as.character(names(dataset())))))
   })  
   
+  observe({ 
+    # Set the label, choices, and selected item based on written input
+    if(is.null(inFile)){
+      #Do jack diddly-squat
+    }
+    else{
+      start.time <- Sys.time()
+      updateSelectizeInput(session, "colDisplay",
+                           'Choose Columns to display',
+                           choices = names(inFile()))  
+      end.time <- Sys.time()
+      time_read.initializeCheckbox <<- end.time - start.time
+    }
+  })
   
   observe({
-    #input$go
-    # Set the label, choices, and selected item based on written input
-    # Cannot select anchor via textBox. Must be done manually
-    if(input$control_preds!=""){
-      strSplitSelections = strsplit(input$control_preds,",")[[1]]
-      strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
-      toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
-    }
-    else
-    {
-      toBeChecked<-names(inFile())
-    }
     ####
-    #subset multiple selections (comma separated)
-    #controlPredsList<-unlist(strsplit(input$control_preds,",")) 
+    # subset multiple selections (comma separated)
+    # controlPredsList<-unlist(strsplit(input$control_preds,",")) 
     # TODO
     
     # Set the label, choices, and selected item based on written input
     #toBeChecked<-names(dataset())[grepl(paste(input$control_preds),names(dataset()))]
-    updateCheckboxGroupInput(session, "preds",
-                             'Choose Predictors',
-                             choices = names(inFile()),
-                             selected = toBeChecked[toBeChecked!=input$an])    
-#     updateCheckboxGroupInput(session, "tableviewPreds",
-#                              'Choose Predictors',
-#                              choices = names(inFile()),
-#                              selected = names(inFile())[grepl(paste(strsplit(input$control_tableviewPreds,",")[[1]],collapse="|"),names(inFile()))])      
-    if(exists("datSubset")&&!is.null(datSubset$node)){
-      updateRadioButtons(session,"nodesRadio",
-                         h3("Choose Node to Display"),
-                         choices = sort(unique(datSubset$node)),
-                         selected = NULL,
-                         inline = TRUE)
+    if(input$updatePreds==0&&!is.null(inFile)){
+      updateCheckboxGroupInput(session, "preds",
+                               'Choose Predictors',
+                               choices = names(inFile()))  
+    }
+    
+    
+    if(input$updatePreds>0){
+      isolate({
+        # Set the label, choices, and selected item based on written input
+        # Cannot select anchor via textBox. Must be done manually
+        #if(input$control_preds!=""){
+          strSplitSelections = strsplit(input$control_preds,",")[[1]]
+          strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
+          toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
+          
+          strSplitSelections = strsplit(input$control_preds_remove,",")[[1]]
+          strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
+          toBeUnchecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
+          browser()
+          # Remove toBeUnchecked predictors
+          toBeChecked<-toBeChecked[!(toBeChecked %in% toBeUnchecked)]
+        #}
+        #else
+        #{
+        #  toBeChecked<-names(inFile())
+        #}
+        updateCheckboxGroupInput(session, "preds",
+                                 'Choose Predictors',
+                                 choices = names(inFile()),
+                                 selected = toBeChecked[toBeChecked!=input$an])  
+      })
     }
   })
+    ## Not in yet
+#     if(exists("datSubset")&&!is.null(datSubset$node)){
+#       updateRadioButtons(session,"nodesRadio",
+#                          h3("Choose Node to Display"),
+#                          choices = sort(unique(datSubset$node)),
+#                          selected = NULL,
+#                          inline = TRUE)
+#    }
+ 
   
   sliderWidth<-reactive({
     as.integer(input$sliderWidth)
