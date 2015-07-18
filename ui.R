@@ -16,7 +16,6 @@ shinyUI(fluidPage(
                 accept=c('text/csv', 
                          'text/comma-separated-values,text/plain', 
                          '.csv')),
-      tags$hr(),
       checkboxInput('header', 'Header', TRUE),
       radioButtons('sep', 'Separator',
                    c(Comma=',',
@@ -28,11 +27,17 @@ shinyUI(fluidPage(
                      'Double Quote'='"',
                      'Single Quote'="'"),
                    '"'),
-      textInput("control_cols",
-                "Type to check display all columns that contain a string. Erase to select all. NOTE: Selecting many columns will slow down the time it takes for the table to be displayed. Be patient.",
-                "Note: Alphanumerics only"),
-      checkboxGroupInput('colDisplay', 'Choose Columns to display',
-                         c("data not loaded"), selected = c("data not loaded"))
+      selectizeInput('colDisplay', 'Choose Columns to display', choices = c("data not loaded"), multiple = TRUE),
+      
+      
+      
+      
+#       textInput("control_cols",
+#                 "Type to check display all columns that contain a string. Erase to select all. NOTE: Selecting many columns will slow down the time it takes for the table to be displayed. Be patient.",
+#                 "Note: Alphanumerics only"),
+      actionButton("updateColsDisplay", "Update columns to display")
+#       checkboxGroupInput('colDisplay', 'Choose Columns to display',
+#                          c("data not loaded"), selected = c("data not loaded"))
     ),
     
     # SIDEBAR UI FROM JUNE 2015 MASTER
@@ -42,8 +47,7 @@ shinyUI(fluidPage(
                 "Anchor:", 
                 c("data not loaded")),
     textInput("control_preds",
-              "Type to check all predictors that contain a string. Erase to select all",
-              "Note: Alphanumerics only"),
+              "Type to check all predictors that contain a string. Erase to select all. Alphanumerics only"),
     actionButton("updatePreds", "Update Predictors"),
     textInput("title_urp",
               "Insert Title"),

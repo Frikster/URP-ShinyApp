@@ -10,8 +10,8 @@ library(party)
 library(stringr)
 options(shiny.maxRequestSize=30*1024^2) 
 calls_read.csv<-0
-h <- 100
-w <- 500
+h <- 0
+w <- 0
 
 shinyServer(function(input, output, clientData, session) {
   
@@ -32,38 +32,62 @@ shinyServer(function(input, output, clientData, session) {
   
   observe({ 
     # Set the label, choices, and selected item based on written input
-    if(input$control_cols!=""){
-      strSplitSelections = strsplit(input$control_cols,",")[[1]]
-      strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
-      toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
+    if(is.null(inFile)){
+      #Do jack diddly-squat
+      
     }
-    else
-    {
-      toBeChecked<-names(inFile())
-    }
-    updateCheckboxGroupInput(session, "colDisplay",
-                             'Choose Columns to display',
-                             choices = names(inFile()),
-                             selected = toBeChecked[toBeChecked!=input$an])   
+    else{
+        start.time <- Sys.time()
+        updateSelectizeInput(session, "colDisplay",
+                                 'Choose Columns to display',
+                                 choices = names(inFile()))  
+        end.time <- Sys.time()
+        time_read.initializeCheckbox <<- end.time - start.time
+      }
+#       else{
+#         start.time <- Sys.time()
+#         isolate({  
+#         strSplitSelections = strsplit(input$control_cols,",")[[1]]
+#         strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
+#         toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
+#         updateCheckboxGroupInput(session, "colDisplay",
+#                                  'Choose Columns to display',
+#                                  choices = names(inFile()),
+#                                  selected = toBeChecked)
+#         })
+#         end.time <- Sys.time()
+#         time_read.updateCheckbox <<- end.time - start.time
+#       }
   })
   
   
   subsetTable<-reactive({
     #browser()
-    if(is.null(input$colDisplay)||input$colDisplay=="data not loaded"){
+    if(is.null(input$colDisplay)){
      # browser()
      # inFile()[,c(colnames(inFile())[1],colnames(inFile())[2])]
     }
     else{ 
-    #  browser()
-    #  inFile()[,c(colnames(inFile())[1],input$colDisplay)]
-      inFile()[,input$colDisplay,drop=FALSE]
+      if(input$updateColsDisplay>0)
+      {
+       #  browser()
+       #  inFile()[,c(colnames(inFile())[1],input$colDisplay)]
+      isolate({
+        start.time <- Sys.time()
+        outSubTable<-inFile()[,input$colDisplay,drop=FALSE]
+        end.time <- Sys.time()
+        time_read.subsetTable <<- end.time - start.time
+        outSubTable
+      })
       }
+      
+    }
   })
   
   
+  
   output$subsettingTable <- DT::renderDataTable(
-    subsetTable(), filter = 'top', server = FALSE,
+    subsetTable(), filter = 'top', server = FALSE, 
     options = list(pageLength = 5, autoWidth = TRUE
     ))
   
@@ -84,8 +108,8 @@ shinyServer(function(input, output, clientData, session) {
   # download the filtered data
   output$downloadSubset = downloadHandler('filtered.csv', content = function(file) {
     s = input$subsettingTable_rows_all
-    #browser()
     inFile()
+    #browser()
     write.csv(inFile()[s, , drop = FALSE], file)
   })
   
@@ -115,6 +139,7 @@ shinyServer(function(input, output, clientData, session) {
   observe({
     #input$go
     # Set the label, choices, and selected item based on written input
+    # Cannot select anchor via textBox. Must be done manually
     if(input$control_preds!=""){
       strSplitSelections = strsplit(input$control_preds,",")[[1]]
       strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
