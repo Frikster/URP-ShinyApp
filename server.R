@@ -10,8 +10,8 @@ library(party)
 library(stringr)
 options(shiny.maxRequestSize=30*1024^2) 
 calls_read.csv<-0
-h <- 0
-w <- 0
+h <- 1000
+w <- 1000
 
 shinyServer(function(input, output, clientData, session) {
   
@@ -88,8 +88,7 @@ shinyServer(function(input, output, clientData, session) {
   
   output$subsettingTable <- DT::renderDataTable(
     subsetTable(), filter = 'top', server = FALSE, 
-    options = list(pageLength = 5, autoWidth = TRUE
-    ))
+    options = list(pageLength = 5, autoWidth = TRUE),rownames=FALSE)
   
   
 #   # Filter data based on selections
@@ -177,7 +176,7 @@ shinyServer(function(input, output, clientData, session) {
           strSplitSelections = strsplit(input$control_preds_remove,",")[[1]]
           strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
           toBeUnchecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
-          browser()
+          # browser()
           # Remove toBeUnchecked predictors
           toBeChecked<-toBeChecked[!(toBeChecked %in% toBeUnchecked)]
         #}
@@ -192,6 +191,7 @@ shinyServer(function(input, output, clientData, session) {
       })
     }
   })
+  
     ## Not in yet
 #     if(exists("datSubset")&&!is.null(datSubset$node)){
 #       updateRadioButtons(session,"nodesRadio",
@@ -204,23 +204,26 @@ shinyServer(function(input, output, clientData, session) {
   
   sliderWidth<-reactive({
     as.integer(input$sliderWidth)
+    #browser()
   })
   
   sliderHeight<-reactive({
     as.integer(input$sliderHeight)
+    #browser()
   })
   
   observe({
     w<<-sliderWidth()
     h<<-sliderHeight()
+    #browser()
   })
   
 
   
   # Construct URP-Ctree
   output$plot <- renderPlot({
-    #h <- sliderHeight()
-    #w <- sliderWidth()
+    dummy<-sliderHeight()
+    dummy<-sliderWidth()
     #browser()
     if(input$go==0){
       return()
@@ -337,8 +340,7 @@ shinyServer(function(input, output, clientData, session) {
   # Filter data based on selections
   output$postUrpTable <- DT::renderDataTable(
     subsetCtreeTable(), filter = 'top', server = FALSE,
-    options = list(pageLength = 5, autoWidth = TRUE
-    ))
+    options = list(pageLength = 5, autoWidth = TRUE),rownames=FALSE)
  
 
   # download the filtered data

@@ -86,7 +86,7 @@ shinyUI(fluidPage(
         tabPanel('URP', 
                  sliderInput("sliderWidth", label = "", min = 10, max = 3000, value = 1000),
                  sliderInput("sliderHeight", label = "", min = 10, max = 3000, value = 1000),
-                 plotOutput("plot", inline = TRUE)),
+                 plotOutput("plot", inline = TRUE,width='auto',height='auto')),
         tabPanel('URP-table',
                  DT::dataTableOutput(outputId="postUrpTable"),
                  downloadButton('downloadCtreeSubset', 'Download Ctree Subset'))
