@@ -88,7 +88,7 @@ shinyServer(function(input, output, clientData, session) {
   
   output$subsettingTable <- DT::renderDataTable(
     subsetTable(), filter = 'top', server = FALSE, 
-    options = list(pageLength = 5, autoWidth = TRUE),rownames=FALSE)
+    options = list(pageLength = 5, autoWidth = TRUE))
   
   
 #   # Filter data based on selections
@@ -349,7 +349,7 @@ shinyServer(function(input, output, clientData, session) {
   # Filter data based on selections
   output$postUrpTable <- DT::renderDataTable(
     subsetCtreeTable(), filter = 'top', server = FALSE,
-    options = list(pageLength = 5, autoWidth = TRUE),rownames=FALSE)
+    options = list(pageLength = 5, autoWidth = TRUE))
  
 
   # download the filtered data

@@ -80,7 +80,8 @@ shinyUI(fluidPage(
         tabPanel('Subsetting',       
                  hr(),
                  DT::dataTableOutput("subsettingTable"),
-                 downloadButton('downloadSubset', 'Download Subset')
+                 downloadButton('downloadSubset', 'Download Subset'),
+                 actionButton("setSubsetToURP", "Use filtered subset (not yet available. Instead download the subset you want, rename it to whatever you want and upload it and then go to the URP tab)")
                  #tableOutput('contents')),
         ),   
         tabPanel('URP', 
