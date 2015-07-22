@@ -168,19 +168,28 @@ shinyServer(function(input, output, clientData, session) {
       isolate({
         # Set the label, choices, and selected item based on written input
         # Cannot select anchor via textBox. Must be done manually
-        #if(input$control_preds!=""){
-          strSplitSelections = strsplit(input$control_preds,",")[[1]]
-          strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
+        if(input$control_preds_remove==""){
+          strSplitSelections <- strsplit(input$control_preds,",")[[1]]
+          strSplitSelections_removeSpaces <- str_replace_all(strSplitSelections, fixed(" "), "")
           toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
+        
           
-          strSplitSelections = strsplit(input$control_preds_remove,",")[[1]]
-          strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
+        }
+        else{
+          strSplitSelections <- strsplit(input$control_preds,",")[[1]]
+          strSplitSelections_removeSpaces <- str_replace_all(strSplitSelections, fixed(" "), "")
+          toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
+        
+          strSplitSelections <- strsplit(input$control_preds_remove,",")[[1]]
+          strSplitSelections_removeSpaces <- str_replace_all(strSplitSelections, fixed(" "), "")
           toBeUnchecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
-          # browser()
-          # Remove toBeUnchecked predictors
+        
           toBeChecked<-toBeChecked[!(toBeChecked %in% toBeUnchecked)]
+        }
+          # Remove toBeUnchecked predictors
+
         #}
-        #else
+        #else 
         #{
         #  toBeChecked<-names(inFile())
         #}
@@ -191,15 +200,15 @@ shinyServer(function(input, output, clientData, session) {
       })
     }
   })
-  
-    ## Not in yet
+ 
+#    Not in yet
 #     if(exists("datSubset")&&!is.null(datSubset$node)){
 #       updateRadioButtons(session,"nodesRadio",
 #                          h3("Choose Node to Display"),
 #                          choices = sort(unique(datSubset$node)),
 #                          selected = NULL,
 #                          inline = TRUE)
-#    }
+
  
   
   sliderWidth<-reactive({
