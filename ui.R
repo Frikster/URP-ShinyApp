@@ -7,7 +7,7 @@ library(DT)
 
 
 shinyUI(fluidPage(
-  titlePanel("Uploading Files"),
+  titlePanel("Unbiased Recursive Partitioning"),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
@@ -84,8 +84,8 @@ shinyUI(fluidPage(
                  #tableOutput('contents')),
         ),   
         tabPanel('URP', 
-                 sliderInput("sliderWidth", label = "", min = 10, max = 3000, value = 1000),
-                 sliderInput("sliderHeight", label = "", min = 10, max = 3000, value = 1000),
+                 sliderInput("sliderWidth", label = "Adjust width (coming soon)", min = 10, max = 3000, value = 1000),
+                 sliderInput("sliderHeight", label = "Adjust height (coming soon)", min = 10, max = 3000, value = 1000),
                  plotOutput("plot", inline = TRUE,width='auto',height='auto')),
         tabPanel('URP-table',
                  DT::dataTableOutput(outputId="postUrpTable"),
