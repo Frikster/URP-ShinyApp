@@ -231,10 +231,7 @@ shinyServer(function(input, output, clientData, session) {
 
   # Set the subset for URP based on the subsetting tab
   subsetToURP<-reactive({
-    input$setSubsetToURP
-    isolate({
-      inFile()[input$subsettingTable_rows_all,]
-    })
+    inFile()[input$subsettingTable_rows_all,]
   })
   
   
