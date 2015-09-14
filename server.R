@@ -23,7 +23,7 @@ shinyServer(function(input, output, clientData, session) {
     else{
       calls_read.csv <<- calls_read.csv + 1
       start.time <- Sys.time()
-      inF<-read.csv(input$file1$datapath, header=input$header, sep=input$sep, quote=input$quote)#[,c(colnames(datSubset)[1],"node",input$colDisplay)]
+      inF<-read.csv(input$file1$datapath, header=input$header, sep=input$sep, quote=input$quote) #[,c(colnames(datSubset)[1],"node",input$colDisplay)]
       end.time <- Sys.time()
       time_read.csv <<- end.time - start.time
       inF
@@ -84,7 +84,7 @@ shinyServer(function(input, output, clientData, session) {
     }
   })
   
-  
+
   
   output$subsettingTable <- DT::renderDataTable(
     subsetTable(), filter = 'top', server = FALSE, 
@@ -111,6 +111,7 @@ shinyServer(function(input, output, clientData, session) {
     #browser()
     write.csv(inFile()[s, , drop = FALSE], file)
   })
+  
   
 ############ JUNE 2015 MASTER SERVER
   
@@ -228,6 +229,15 @@ shinyServer(function(input, output, clientData, session) {
   })
   
 
+  # Set the subset for URP based on the subsetting tab
+  subsetToURP<-reactive({
+    input$setSubsetToURP
+    isolate({
+      inFile()[input$subsettingTable_rows_all,]
+    })
+  })
+  
+  
   
   # Construct URP-Ctree
   output$plot <- renderPlot({
@@ -239,7 +249,7 @@ shinyServer(function(input, output, clientData, session) {
     }
     else {
      isolate({
-        datSubset<<-subset(inFile(),inFile()[,input$an]!="NA")  
+        datSubset<<-subset(subsetToURP(),subsetToURP()[,input$an]!="NA") 
         anchor <- datSubset[,input$an]
         predictors <- datSubset[,input$preds]
         urp<<-ctree(anchor~., data=data.frame(anchor,predictors))
@@ -288,7 +298,7 @@ shinyServer(function(input, output, clientData, session) {
     })
     }
     #browser()
-  },height = h, width = w)
+  },height = reactive({sliderHeight()}), width = reactive({sliderWidth()}))
   
   output$nodePlot <- renderPlot({ 
     input$nodesRadio
@@ -361,6 +371,8 @@ shinyServer(function(input, output, clientData, session) {
   
   
   # toBeChecked<-names(inFile())[grepl(paste(strsplit(input$control_preds,",")[[1]],collapse="|"),names(inFile()))]
+  
+  
   
   ########### EVERYTHING BELOW HAS NOT GOT A PART IN UI YET ######################
   

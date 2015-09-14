@@ -28,10 +28,7 @@ shinyUI(fluidPage(
                      'Single Quote'="'"),
                    '"'),
       selectizeInput('colDisplay', 'Choose Columns to display', choices = c("data not loaded"), multiple = TRUE),
-      
-      
-      
-      
+  
 #       textInput("control_cols",
 #                 "Type to check display all columns that contain a string. Erase to select all. NOTE: Selecting many columns will slow down the time it takes for the table to be displayed. Be patient.",
 #                 "Note: Alphanumerics only"),
@@ -80,13 +77,12 @@ shinyUI(fluidPage(
         tabPanel('Subsetting',       
                  hr(),
                  DT::dataTableOutput("subsettingTable"),
-                 downloadButton('downloadSubset', 'Download Subset'),
-                 actionButton("setSubsetToURP", "Use filtered subset (not yet available. Instead download the subset you want, rename it to whatever you want and upload it and then go to the URP tab)")
+                 downloadButton('downloadSubset', 'Download Subset')
                  #tableOutput('contents')),
         ),   
         tabPanel('URP', 
-                 sliderInput("sliderWidth", label = "Adjust width (coming soon)", min = 10, max = 3000, value = 1000),
-                 sliderInput("sliderHeight", label = "Adjust height (coming soon)", min = 10, max = 3000, value = 1000),
+                 sliderInput("sliderWidth", label = "Adjust width", min = 10, max = 3000, value = 1000),
+                 sliderInput("sliderHeight", label = "Adjust height", min = 10, max = 3000, value = 1000),
                  plotOutput("plot", inline = TRUE,width='auto',height='auto')),
         tabPanel('URP-table',
                  DT::dataTableOutput(outputId="postUrpTable"),

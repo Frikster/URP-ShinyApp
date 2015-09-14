@@ -1,6 +1,8 @@
 name: URP-ShinyApp
 account: urpanalyses
 server: shinyapps.io
-bundleId: 223639
+bundleId: 264060
 url: https://urpanalyses.shinyapps.io/URP-ShinyApp
-when: 1437544225.47314
+when: 1442102917.85193
+asMultiple: FALSE
+asStatic: FALSE
