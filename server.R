@@ -63,6 +63,8 @@ shinyServer(function(input, output, clientData, session) {
   
   subsetTable<-reactive({
     #browser()
+    input$updateColsDisplay
+    isolate({
     if(is.null(input$colDisplay)){
      # browser()
      # inFile()[,c(colnames(inFile())[1],colnames(inFile())[2])]
@@ -72,16 +74,15 @@ shinyServer(function(input, output, clientData, session) {
       {
        #  browser()
        #  inFile()[,c(colnames(inFile())[1],input$colDisplay)]
-      isolate({
+      #isolate({
         start.time <- Sys.time()
         outSubTable<-inFile()[,input$colDisplay,drop=FALSE]
         end.time <- Sys.time()
         time_read.subsetTable <<- end.time - start.time
         outSubTable
-      })
-      }
-      
+     }
     }
+   })
   })
   
 
