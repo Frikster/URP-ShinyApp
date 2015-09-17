@@ -27,7 +27,7 @@ shinyServer(function(input, output, clientData, session) {
       end.time <- Sys.time()
       time_read.csv <<- end.time - start.time
       inF
-      }
+    }
   })
   
   observe({ 
@@ -37,27 +37,27 @@ shinyServer(function(input, output, clientData, session) {
       
     }
     else{
-        start.time <- Sys.time()
-        updateSelectizeInput(session, "colDisplay",
-                                 'Choose Columns to display',
-                                 choices = names(inFile()))  
-        end.time <- Sys.time()
-        time_read.initializeCheckbox <<- end.time - start.time
-      }
-#       else{
-#         start.time <- Sys.time()
-#         isolate({  
-#         strSplitSelections = strsplit(input$control_cols,",")[[1]]
-#         strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
-#         toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
-#         updateCheckboxGroupInput(session, "colDisplay",
-#                                  'Choose Columns to display',
-#                                  choices = names(inFile()),
-#                                  selected = toBeChecked)
-#         })
-#         end.time <- Sys.time()
-#         time_read.updateCheckbox <<- end.time - start.time
-#       }
+      start.time <- Sys.time()
+      updateSelectizeInput(session, "colDisplay",
+                           'Choose Columns to display',
+                           choices = names(inFile()))  
+      end.time <- Sys.time()
+      time_read.initializeCheckbox <<- end.time - start.time
+    }
+    #       else{
+    #         start.time <- Sys.time()
+    #         isolate({  
+    #         strSplitSelections = strsplit(input$control_cols,",")[[1]]
+    #         strSplitSelections_removeSpaces = str_replace_all(strSplitSelections, fixed(" "), "")
+    #         toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
+    #         updateCheckboxGroupInput(session, "colDisplay",
+    #                                  'Choose Columns to display',
+    #                                  choices = names(inFile()),
+    #                                  selected = toBeChecked)
+    #         })
+    #         end.time <- Sys.time()
+    #         time_read.updateCheckbox <<- end.time - start.time
+    #       }
   })
   
   
@@ -65,71 +65,73 @@ shinyServer(function(input, output, clientData, session) {
     #browser()
     input$updateColsDisplay
     isolate({
-    if(is.null(input$colDisplay)){
-     # browser()
-     # inFile()[,c(colnames(inFile())[1],colnames(inFile())[2])]
-    }
-    else{ 
-      if(input$updateColsDisplay>0)
-      {
-       #  browser()
-       #  inFile()[,c(colnames(inFile())[1],input$colDisplay)]
-      #isolate({
-        start.time <- Sys.time()
-        outSubTable<-inFile()[,input$colDisplay,drop=FALSE]
-        end.time <- Sys.time()
-        time_read.subsetTable <<- end.time - start.time
-        outSubTable
-     }
-    }
-   })
+      if(is.null(input$colDisplay)){
+        # browser()
+        # inFile()[,c(colnames(inFile())[1],colnames(inFile())[2])]
+      }
+      else{ 
+        if(input$updateColsDisplay>0)
+        {
+          #  browser()
+          #  inFile()[,c(colnames(inFile())[1],input$colDisplay)]
+          #isolate({
+          start.time <- Sys.time()
+          outSubTable<-inFile()[,input$colDisplay,drop=FALSE]
+          end.time <- Sys.time()
+          time_read.subsetTable <<- end.time - start.time
+          outSubTable
+        }
+      }
+    })
   })
   
-
+  
   
   output$subsettingTable <- DT::renderDataTable(
     subsetTable(), filter = 'top', server = FALSE, 
     options = list(pageLength = 5, autoWidth = TRUE))
   
   
-#   # Filter data based on selections
-#   output$postUrpTable <- renderDataTable({
-#     if(input$tableButton<=0){
-#       return()
-#     }
-#     else{ 
-#       
-#       datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
-#     }
-#   })
+  #   # Filter data based on selections
+  #   output$postUrpTable <- renderDataTable({
+  #     if(input$tableButton<=0){
+  #       return()
+  #     }
+  #     else{ 
+  #       
+  #       datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
+  #     }
+  #   })
   
   
   
   # download the filtered data
   output$downloadSubset = downloadHandler('filtered.csv', content = function(file) {
-    s = input$subsettingTable_rows_all
-    inFile()
+    #s = input$subsettingTable_rows_all
+    #inFile()
+    
+    write.csv(subsetToURP(), file)
     #browser()
-    write.csv(inFile()[s, , drop = FALSE], file)
+    # write.csv(inFile()[s, , drop = FALSE], file)
   })
   
   
-############ JUNE 2015 MASTER SERVER
+  ############ JUNE 2015 MASTER SERVER
   
-#   dataset<-reactive({
-#     input$subsettingTable_rows_all
-#     #input$file
-#     if(is.null(input$subsettingTable_rows_all)){
-#       (data.frame())
-#     }
-#     else{
-#       inFile()
-#       
-#       #filename<-input$file
-#       #load(filename$datapath)
-#       #dat
-#     }
-#   })
+  #   dataset<-reactive({
+  #     input$subsettingTable_rows_all
+  #     #input$file
+  #     if(is.null(input$subsettingTable_rows_all)){
+  #       (data.frame())
+  #     }
+  #     else{
+  #       inFile()
+  #       
+  #       #filename<-input$file
+  #       #load(filename$datapath)
+  #       #dat
+  #     }
+  #   })
   
   observe({ 
     updateSelectInput(session,"an", "Anchor:", c(unique(as.character(names(inFile())))))
@@ -174,22 +176,22 @@ shinyServer(function(input, output, clientData, session) {
           strSplitSelections <- strsplit(input$control_preds,",")[[1]]
           strSplitSelections_removeSpaces <- str_replace_all(strSplitSelections, fixed(" "), "")
           toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
-        
+          
           
         }
         else{
           strSplitSelections <- strsplit(input$control_preds,",")[[1]]
           strSplitSelections_removeSpaces <- str_replace_all(strSplitSelections, fixed(" "), "")
           toBeChecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
-        
+          
           strSplitSelections <- strsplit(input$control_preds_remove,",")[[1]]
           strSplitSelections_removeSpaces <- str_replace_all(strSplitSelections, fixed(" "), "")
           toBeUnchecked<-names(inFile())[grepl(paste(strSplitSelections_removeSpaces,collapse="|"),names(inFile()),ignore.case=TRUE)]
-        
+          
           toBeChecked<-toBeChecked[!(toBeChecked %in% toBeUnchecked)]
         }
-          # Remove toBeUnchecked predictors
-
+        # Remove toBeUnchecked predictors
+        
         #}
         #else 
         #{
@@ -202,16 +204,16 @@ shinyServer(function(input, output, clientData, session) {
       })
     }
   })
- 
-#    Not in yet
-#     if(exists("datSubset")&&!is.null(datSubset$node)){
-#       updateRadioButtons(session,"nodesRadio",
-#                          h3("Choose Node to Display"),
-#                          choices = sort(unique(datSubset$node)),
-#                          selected = NULL,
-#                          inline = TRUE)
-
- 
+  
+  #    Not in yet
+  #     if(exists("datSubset")&&!is.null(datSubset$node)){
+  #       updateRadioButtons(session,"nodesRadio",
+  #                          h3("Choose Node to Display"),
+  #                          choices = sort(unique(datSubset$node)),
+  #                          selected = NULL,
+  #                          inline = TRUE)
+  
+  
   
   sliderWidth<-reactive({
     as.integer(input$sliderWidth)
@@ -229,10 +231,15 @@ shinyServer(function(input, output, clientData, session) {
     #browser()
   })
   
-
+  
   # Set the subset for URP based on the subsetting tab
   subsetToURP<-reactive({
-    inFile()[input$subsettingTable_rows_all,]
+    if(is.null(input$subsettingTable_rows_all)){
+      inFile()
+    }
+    else{
+      inFile()[input$subsettingTable_rows_all,]
+    }
   })
   
   
@@ -246,7 +253,7 @@ shinyServer(function(input, output, clientData, session) {
       return()
     }
     else {
-     isolate({
+      isolate({
         datSubset<<-subset(subsetToURP(),subsetToURP()[,input$an]!="NA") 
         anchor <- datSubset[,input$an]
         predictors <- datSubset[,input$preds]
@@ -257,7 +264,10 @@ shinyServer(function(input, output, clientData, session) {
         plot(urp,main=input$title_urp)
         
         # Get statistics for each node (i.e. median values)
-        medianList <- by(anchor,where(urp),median) #or whatever function you desire for median
+        # Don't try to get the median if we're dealing with a non-numeric anchor outcome
+        if(is.numeric(anchor)){
+          medianList <- by(anchor,where(urp),median) # or whatever function you desire for median
+        }
         treeGridList<-numeric(dim(datSubset)[1]) 
         # Create a list of all grid elements from the tree
         for(gg in grid.ls(print=F)[[1]]) {
@@ -274,7 +284,12 @@ shinyServer(function(input, output, clientData, session) {
           gridNode_Ref<-sub("(.*?):.*", "\\1", treeGridList_Nodes)[i]
           nodeNum<-sub(".*:", "", treeGridList_Nodes)[i]
           nodeNum<-substring(nodeNum[[1]],7)
-          grid.edit(gridNode_Ref, label=paste("Median",medianList[[i]],"Cohort",nodeNum))
+          if(is.numeric(anchor)){
+            grid.edit(gridNode_Ref, label=paste("Median",medianList[[i]],"Cohort",nodeNum))
+          }
+          else{
+            grid.edit(gridNode_Ref, label=paste("Cohort",nodeNum))
+          }
           #grid.edit(gridNode_Ref, gp=gpar(fontsize=15))
         }
         # increase size of title
@@ -293,7 +308,7 @@ shinyServer(function(input, output, clientData, session) {
           gridAxis_Ref<-sub("(.*?):.*", "\\1", treeGridList_yaxis)[i]
           grid.edit(gridAxis_Ref, gp=gpar(fontsize=18))
         }
-    })
+      })
     }
     #browser()
   },height = reactive({sliderHeight()}), width = reactive({sliderWidth()}))
@@ -312,19 +327,19 @@ shinyServer(function(input, output, clientData, session) {
       }
     }
   })
-
-# Third panel  
-    
+  
+  # Third panel  
+  
   # Filter data based on selections
-#   output$postUrpTable <- renderDataTable({
-#     if(input$tableButton<=0){
-#       return()
-#     }
-#     else{ 
-#       
-#       datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
-#     }
-#   })
+  #   output$postUrpTable <- renderDataTable({
+  #     if(input$tableButton<=0){
+  #       return()
+  #     }
+  #     else{ 
+  #       
+  #       datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
+  #     }
+  #   })
   
   observe({ 
     # Set the label, choices, and selected item based on written input
@@ -334,22 +349,22 @@ shinyServer(function(input, output, clientData, session) {
     }
     else{
       updateSelectizeInput(session, "tableviewPreds",
-                               'Choose Predictors',
-                               choices = names(inFile())) 
+                           'Choose Predictors',
+                           choices = names(inFile())) 
     }
   })
   
   
   subsetCtreeTable<-reactive({
+    input$tab
     if(is.null(input$tableviewPreds)||input$tableviewPreds=="data not loaded"){
-      #datSubset[,c(colnames(datSubset)[1],"node")]
+      datSubset[,c(colnames(datSubset)[1],"node")]
     }
     else{ 
-      if(input$updateColsDisplay>0){
-        isolate({
-          datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
-        })
-      }
+      #if(input$updateColsDisplay>0){
+      #  isolate({
+      datSubset[,c(colnames(datSubset)[1],"node",input$tableviewPreds)]
+      #})
     }
   })
   
@@ -358,10 +373,10 @@ shinyServer(function(input, output, clientData, session) {
   output$postUrpTable <- DT::renderDataTable(
     subsetCtreeTable(), filter = 'top', server = FALSE,
     options = list(pageLength = 5, autoWidth = TRUE))
- 
-
+  
+  
   # download the filtered data
-  output$downloadCtreeSubset = downloadHandler('filtered.csv', content = function(file) {
+  output$downloadCtreeSubset = downloadHandler('ctree-filtered.csv', content = function(file) {
     s = input$postUrpTable_rows_all
     #inFile()
     write.csv(datSubset[s, , drop = FALSE], file)
@@ -588,7 +603,7 @@ shinyServer(function(input, output, clientData, session) {
   })
   
   
-
+  
   
   
   
