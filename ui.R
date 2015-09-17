@@ -27,16 +27,9 @@ shinyUI(fluidPage(
                        'Single Quote'="'"),
                      '"'),
         selectizeInput('colDisplay', 'Choose Columns to display', choices = c("data not loaded"), multiple = TRUE),
-        
-        #       textInput("control_cols",
-        #                 "Type to check display all columns that contain a string. Erase to select all. NOTE: Selecting many columns will slow down the time it takes for the table to be displayed. Be patient.",
-        #                 "Note: Alphanumerics only"),
         actionButton("updateColsDisplay", "Update columns to display")
-        #       checkboxGroupInput('colDisplay', 'Choose Columns to display',
-        #                          c("data not loaded"), selected = c("data not loaded"))
       ),
       
-      # SIDEBAR UI FROM JUNE 2015 MASTER
       conditionalPanel(
         'input.tab === "URP"', 
         selectInput("an", 
@@ -53,19 +46,10 @@ shinyUI(fluidPage(
         actionButton("go", "Plot URP-Ctree"),
         checkboxGroupInput('preds', 'Choose Predictors',
                            c("data not loaded"), selected = c("data not loaded"))
-        
       ),
-      
       conditionalPanel(
         'input.tab === "URP-table"', 
         selectizeInput('tableviewPreds', 'Choose Predictors to display', choices = c("data not loaded"), multiple = TRUE)
-        
-        #       textInput("control_tableviewPreds",
-        #                 "Type to check all predictors that contain a string. Erase to select all",
-        #                 "Note: Alphanumerics only"),
-        #actionButton("tableButton", "Tabulate")
-        #       checkboxGroupInput('tableviewPreds', 'Choose Predictors to display',
-        #                          c("data not loaded"), selected = NA)
       )
       
     ),    
@@ -77,7 +61,6 @@ shinyUI(fluidPage(
                  hr(),
                  DT::dataTableOutput("subsettingTable"),
                  downloadButton('downloadSubset', 'Download Subset')
-                 #tableOutput('contents')),
         ),   
         tabPanel('URP', 
                  sliderInput("sliderWidth", label = "Adjust width", min = 10, max = 5000, value = 1000),
@@ -86,11 +69,7 @@ shinyUI(fluidPage(
         tabPanel('URP-table',
                  DT::dataTableOutput(outputId="postUrpTable"),
                  downloadButton('downloadCtreeSubset', 'Download Ctree Subset'))
-        
       )
-      
-      
-      
     )
   )
 ))
