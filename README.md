@@ -42,14 +42,6 @@ In the URP-Table tab we can view the data that comprises the ctrees that were pl
 
 In this example, consider node 4 for the ctree in the [screenshots](#screenshots) section where the anchor was "at6min.12Months" (i.e. the tree with the title: *Characteristics at 2 Weeks to Predict 6 Min Walk Distance at 12 Months*). We can notice how almost all patients in this cohort have no walking ability at 6months, except for 3. This tab allows us to quickly look at those 3 patients and see what other characteristics they might have. In this example we additionally display their AIS Grades at 2 weeks and 12 months.
 
-### Video Overview
-
-<video width="320" height="240" controls>
-  <source src="/assets/URP-Shiny-App.webm" type="video/webm" />
-  <source src="/assets/URP-Shiny-App.mp4" type="video/mp4" />
-  <p>Your browser cannot play the provided .webm video file.</p>
-</video>
-
 ##  Limitations
 
 This app is no longer maintained and running code written almost a decade ago by an undergrad without any prior real-world coding experience. Adjust expectations accordingly.
