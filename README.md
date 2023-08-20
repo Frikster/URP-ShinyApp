@@ -3,7 +3,8 @@
 URP-ShinyApp provides an online interface to the R [party package](https://cran.r-project.org/web/packages/party/index.html). Users can upload a CSV, select which columns to include or exclude as predictors to produce a [URP-ctree](#unbiased-recursive-partitioning-urp) that shows a decision tree with predictor splits leading to the selected "anchor" target variable.
 
 [Live site](https://urpanalyses.shinyapps.io/URP-ShinyApp/)
-[Academic Poster]()
+
+[Academic Posters](#supplementary-example)
 
 ## Screenshots
 
@@ -43,7 +44,7 @@ In this example, consider node 4 for the ctree in the [screenshots](#screenshots
 
 ### Video Overview
 
-<video controls>
+<video width="320" height="240" controls>
   <source src="/assets/URP-Shiny-App.webm" type="video/webm" />
   <p>Your browser cannot play the provided .webm video file.</p>
 </video>
