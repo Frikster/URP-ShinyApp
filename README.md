@@ -46,6 +46,7 @@ In this example, consider node 4 for the ctree in the [screenshots](#screenshots
 
 <video width="320" height="240" controls>
   <source src="/assets/URP-Shiny-App.webm" type="video/webm" />
+  <source src="/assets/URP-Shiny-App.mp4" type="video/mp4" />
   <p>Your browser cannot play the provided .webm video file.</p>
 </video>
 
